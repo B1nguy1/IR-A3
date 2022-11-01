@@ -9,9 +9,6 @@ from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 
 '''
-I am not sure how much I had to document the source code, but I have added some comments
-in part of the code where it might be not so clear. 
-I have also tried to name variables I have defined as meaningful as possible
 See comments for following tasks "# TASK 1,2,3,4 #", and the following comments for subtasks I have solved. 
 '''
 ########
@@ -120,13 +117,6 @@ with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
         lsi_matrixSimilarity = MatrixSimilarity(lsi_corpus)
 
     # 3.5
-        '''
-        I am not sure how to interpret these topics as I got some strange values from my LSI_model,
-        but I will try
-        Topic 1: Seems to be about price and countries
-        Topic 2: Maybe relevant topic here is about the barrel and the price of it since I got a lot of numbers as result
-        Topic 3: I will interpret this as something about economy. This is because of the "commonwealth" and "stock"
-        '''
         print(f"Topic 1: {lsi_model.show_topic(0)}")
         print("\n")
         print(f"Topic 2: {lsi_model.show_topic(1)}")
