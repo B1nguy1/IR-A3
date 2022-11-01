@@ -8,6 +8,12 @@ from gensim.similarities import MatrixSimilarity
 from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 
+'''
+I am not sure how much I had to document the source code, but I have added some comments
+in part of the code where it might be not so clear. 
+I have also tried to name variables I have defined as meaningful as possible
+See comments for following tasks "# TASK 1,2,3,4 #", and the following comments for subtasks I have solved. 
+'''
 ########
 # TASK 1 #
 #########
@@ -15,7 +21,6 @@ from nltk.probability import FreqDist
 # 1.0
 random.seed(123)
 
-# 1.1-1.7
 
 # 1.1
 with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
@@ -26,12 +31,11 @@ with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
 
     paragraphs_without_whitespaces = []
     for partioned_paragraph in partitioned_paragraphs:
-        # Remove whitespaces and add to a new list
+        # add each paragraph in partioned paragraphs to a new list without whitespaces
         paragraphs_without_whitespaces.append(partioned_paragraph.strip())
 
     paragraphs_without_empty_strings = []
     for p in paragraphs_without_whitespaces:
-        # Add paragraph to the list if not empty.
         if p != "":
             paragraphs_without_empty_strings.append(p)
 
@@ -42,40 +46,47 @@ with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
         if filter_word not in paragraph.lower():
             paragraphs_without_gutenberg.append(paragraph)
 
+    # using same list to convert to lower case
+    paragraphs_without_gutenberg = [x.lower()
+                                    for x in paragraphs_without_gutenberg]
+    # Create a copy of the list for use in part 4
     copy_of_paragraphs_list = paragraphs_without_gutenberg[:]
 
     # 1.4
-
-    paragraphs_not_empty = []
+    word_list = []
     for paragraph in paragraphs_without_gutenberg:
         single_word = paragraph.split(" ")
-        paragraphs_not_empty.append(single_word)
+        word_list.append(single_word)
+
+    # Removes empty string in the list of words
+    word_list = [[i for i in item if i != '']
+                 for item in word_list]
 
     # 1.5
-    translation_table = str.maketrans("", "", string.punctuation+"\n\r\t")
-    list1 = [[word.lower().translate(word) for word in paragraph]
-             for paragraph in paragraphs_not_empty]
+    translation_table = str.maketrans('', '', string.punctuation+"\n\r\t")
+    paragraph_list = [[word.lower().translate(translation_table) for word in paragraph]
+                      for paragraph in word_list]
 
     # 1.6
     stemmer = PorterStemmer()
-    for i in range(len(list1)):
-        for j in range(len(list1[i])):
-            list1[i][j] = stemmer.stem(list1[i][j])
+    for i in range(len(paragraph_list)):
+        for j in range(len(paragraph_list[i])):
+            paragraph_list[i][j] = stemmer.stem(paragraph_list[i][j])
 
     # 1.7
-    for i in range(len(list1)):
-        for j in range(len(list1[i])):
-            freqDist = FreqDist(list1[i][j])
+    for i in range(len(paragraph_list)):
+        for j in range(len(paragraph_list[i])):
+            freqDist = FreqDist(paragraph_list[i][j])
 
-  #  print(list1[:10])
     ########
     # TASK 2 #
     #########
 
     # 2.0
-    dictionary = Dictionary(list1)
+    dictionary = Dictionary(paragraph_list)
+
     # 2.1
-    with codecs.open("common-english-words.txt", "r", encoding="utf-8") as english_words:
+    with open("common-english-words.txt", "r", encoding="utf-8") as english_words:
 
         stop_words = english_words.read().split(",")
         stop_ids = []
@@ -87,7 +98,7 @@ with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
     # 2.2
 
         bow_corpus = [dictionary.doc2bow(paragraph)
-                      for paragraph in list1]
+                      for paragraph in paragraph_list]
     ########
     # TASK 3 #
     #########
@@ -99,59 +110,130 @@ with codecs.open("pg3300.txt", "r", encoding="utf-8") as paragraphs_file:
         tfidf_corpus = tfidf_model[bow_corpus]
 
     # 3.3
-        tfidf_matrixSimilarity = MatrixSimilarity(tfidf_corpus)
-       # print(tfidf_matrixSimilarity)
+        tfidf_matrixSimilarity = MatrixSimilarity(bow_corpus)
 
     # 3.4
         lsi_model = LsiModel(tfidf_corpus, id2word=dictionary, num_topics=100)
+
         lsi_corpus = lsi_model[tfidf_corpus]
-        # print(lsi_corpus)
+
         lsi_matrixSimilarity = MatrixSimilarity(lsi_corpus)
-        # print(lsi_model.show_topics(num_topics=3))
+
+    # 3.5
+        '''
+        I am not sure how to interpret these topics as I got some strange values from my LSI_model,
+        but I will try
+        Topic 1: Seems to be about price and countries
+        Topic 2: Maybe relevant topic here is about the barrel and the price of it since I got a lot of numbers as result
+        Topic 3: I will interpret this as something about economy. This is because of the "commonwealth" and "stock"
+        '''
+        print(f"Topic 1: {lsi_model.show_topic(0)}")
+        print("\n")
+        print(f"Topic 2: {lsi_model.show_topic(1)}")
+        print("\n")
+        print(f"Topic 3: {lsi_model.show_topic(2)}")
 
     ########
     # TASK 4 #
     #########
 
     # 4.1
-
-        def preprocessing(doc):
+        '''
+        A function that removes punctuation and stems the query "q" 
+        '''
+        def preprocessing(q):
             stemmer = PorterStemmer()
             translation_table = str.maketrans(
-                "", "", string.punctuation+"\n\r\t")
+                '', '', string.punctuation+"\n\r\t")
             lowercase_and_without_punctuation = [
-                word.lower().translate(translation_table) for word in doc]
+                word.lower().translate(translation_table) for word in q]
             stemmed_documents = [stemmer.stem(
                 word) for word in lowercase_and_without_punctuation]
             return stemmed_documents
 
+        # splits the query into a list containing each word from the query sentence
         query = "What is the function of money?".split(" ")
+        # runs the function preprocessing
         q = preprocessing(query)
+        # converts to a BOW representation
         q = dictionary.doc2bow(q)
 
     # 4.2
         tfidf_Query = tfidf_model[q]
 
+        for i in tfidf_Query:
+            print("index:", i[0], "word:", dictionary.get(
+                i[0], i[1]), "influenc:", i[1])
+
     # 4.3
         doc2similarity = enumerate(tfidf_matrixSimilarity[tfidf_Query])
         top3Paragraphs = sorted(doc2similarity, key=lambda kv: -kv[1])[:3]
 
-        for doc in top3Paragraphs:
-            print("TFIDF:")
-            print(f'\n[paragraph {doc[0]}]')
-            document = copy_of_paragraphs_list[doc[0]]
-            print("\n".join(document.split("\n")[:5]))
+        for p in top3Paragraphs:
+            print(f'\n[paragraph {p[0]}]')
+            document = copy_of_paragraphs_list[p[0]]
+            print()
+           # print("\n".join(document.split("\n")[:5]))
 
-        # 4.4
+        '''
+        [paragraph 23]
+           chapter iv.
+            of the origin and use of money.
+
+        [paragraph 73]
+            chapter ii.
+            of money, considered as a particular
+            branch of the general stock of the society, or of the expense of maintaining
+            the national capital.
+        
+        [paragraph 101]
+            Bar or ingot gold is received in proportion to its fineness, compared with
+        the above foreign gold coin. Upon fine bars the bank gives 340 per mark.
+        In general, however, something more is given upon coin of a known
+        fineness, than upon gold and silver bars, of which the fineness cannot be
+        ascertained but by a process of melting and assaying.
+        '''
+
+    # 4.4
         lsi_query = lsi_model[tfidf_Query]
         top3Topics = sorted(lsi_query, key=lambda kv: -abs(kv[1]))[:3]
-        topics = lsi_model.show_topics()[:3]
+        for topic in top3Topics:
+            print("[", "Topic:", topic[0], "]")
+            print(lsi_model.show_topic(topic[0]))
 
         doc2similarity = enumerate(lsi_matrixSimilarity[lsi_query])
         docs2 = sorted(doc2similarity, key=lambda kv: -kv[1])[:3]
 
         for d in docs2:
-            print("LSI:")
             print(f'\n[paragraph {d[0]}]')
             test2 = copy_of_paragraphs_list[d[0]]
-            print("\n".join(test2.split("\n")[:5]))
+            print()
+            # print("\n".join(test2.split("\n")[:5]))
+
+        '''
+        [paragraph 74]
+        It has been shown in the First Book, that the price of the greater part of
+        commodities resolves itself into three parts, of which one pays the wages
+        of the labour, another the profits of the stock, and a third the rent of
+        the land which had been employed in producing and bringing them to market:
+        that there are, indeed, some commodities of which the price is made up of
+
+        [paragraph 72]
+        When the stock which a man possesses is no more than sufficient to
+        maintain him for a few days or a few weeks, he seldom thinks of deriving
+        any revenue from it. He consumes it as sparingly as he can, and
+        endeavours, by his labour, to acquire something which may supply its place
+        before it be consumed altogether. His revenue is, in this case, derived
+
+        [paragraph 78]
+            The stock which is lent at interest is always considered as a capital by
+            the lender. He expects that in due time it is to be restored to him, and
+         that, in the mean time, the borrower is to pay him a certain annual rent
+        for the use of it. The borrower may use it either as a capital, or as a
+        stock reserved for immediate consumption. If he uses it as a capital, he 
+        '''
+
+        '''
+        LSI and TFIDF models result in different paragraphs. However, the models include
+        paragraphs 72-74.
+        '''
